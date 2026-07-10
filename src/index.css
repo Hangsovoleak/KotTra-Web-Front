@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import "tailwindcss";
+
+/*
+  Design tokens reverse-engineered from the uploaded KotTra screenshots
+  (Dashboard.png, Calendar.png, Goal.png). Colors were sampled directly
+  from the source images so the palette matches as closely as possible.
+*/
+@theme {
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Sidebar */
+  --color-sidebar: #232428;
+  --color-sidebar-hover: #3a3b40;
+  --color-sidebar-muted: #75767a;
+
+  /* App surfaces */
+  --color-app-bg: #f8f9fa;
+  --color-card-border: #e5e7eb;
+
+  /* Category: Meeting (blue) */
+  --color-meeting: #487fc3;
+  --color-meeting-bold: #0093f3;
+  --color-meeting-light: #d1dff0;
+  --color-meeting-border: #1a5fb4;
+
+  /* Category: Learning (green) */
+  --color-learning: #51b587;
+  --color-learning-bold: #26a269;
+  --color-learning-light: #d4ece1;
+  --color-learning-border: #26a269;
+
+  /* Category: Event (red) */
+  --color-event: #b74a57;
+  --color-event-bold: #a51d2d;
+  --color-event-light: #edd2d5;
+  --color-event-border: #a51d2d;
+
+  /* Category: General (yellow) */
+  --color-general: #eab73b;
+  --color-general-bold: #e5a50a;
+  --color-general-light: #f0e3c4;
+  --color-general-border: #e5a50a;
+
+  /* Calendar page accents */
+  --color-cal-header: #cee7dd;
+  --color-cal-daybar: #cbdaec;
+  --color-cal-sidebar: #f4e8ca;
+}
+
+@layer base {
+  html,
+  body {
+    font-family: var(--font-mono);
+  }
+
+  * {
+    @apply border-card-border;
+  }
+}
+
+@layer utilities {
+  /* subtle scrollbar to match a tidy, technical UI */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 9999px;
+  }
+}
