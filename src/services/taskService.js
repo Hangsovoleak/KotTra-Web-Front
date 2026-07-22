@@ -1,79 +1,69 @@
-import { mockDelay } from '@/services/mockUtils';
-// import api from '@/services/api'; // uncomment once FastAPI backend is live
+import {
+  addCategory as addCategoryDoc,
+  addTask as addTaskDoc,
+  deleteTask as deleteTaskDoc,
+  getCategories as getCategoriesDoc,
+  getTasks as getTasksDoc,
+  updateTask as updateTaskDoc,
+} from '@/firebase/firestore';
+import { getCurrentUser } from '@/services/authService';
 
-let mockTasks = [
-  {
-    id: 'tsk_001',
-    title: 'Hackathon',
-    description: 'Team hackathon kickoff and planning session.',
-    categories: ['meeting', 'learning', 'general', 'event'],
-    from: '7:00',
-    to: '8:30',
-    period: 'PM',
-    date: '2026-02-11',
-  },
-  {
-    id: 'tsk_002',
-    title: 'Hackathon',
-    description: 'Team hackathon kickoff and planning session.',
-    categories: ['meeting', 'learning', 'general', 'event'],
-    from: '7:00',
-    to: '8:30',
-    period: 'PM',
-    date: '2026-02-11',
-  },
-  {
-    id: 'tsk_003',
-    title: 'Hackathon',
-    description: 'Team hackathon kickoff and planning session.',
-    categories: ['meeting', 'learning', 'general', 'event'],
-    from: '7:00',
-    to: '8:30',
-    period: 'PM',
-    date: '2026-02-11',
-  },
-  {
-    id: 'tsk_004',
-    title: 'Hackathon',
-    description: 'Team hackathon kickoff and planning session.',
-    categories: ['meeting', 'learning', 'general', 'event'],
-    from: '7:00',
-    to: '8:30',
-    period: 'PM',
-    date: '2026-02-11',
-  },
-];
+function normalizeTask(task, fallbackId) {
+  return {
+    id: task?.id || fallbackId,
+    title: task?.title || 'Untitled task',
+    description: task?.description || '',
+    categories: Array.isArray(task?.categories) ? task.categories : [],
+    from: task?.from || '09:00',
+    to: task?.to || '10:00',
+    period: task?.period || 'AM',
+    date: task?.date || new Date().toISOString().slice(0, 10),
+    completed: Boolean(task?.completed),
+    userId: task?.userId || null,
+  };
+}
 
-export async function getTasks() {
-  // return (await api.get('/tasks')).data;
-  return mockDelay(mockTasks);
+export async function getTasks(userId = null) {
+  const currentUser = await getCurrentUser();
+  const effectiveUserId = userId || currentUser?.uid || null;
+  const tasks = await getTasksDoc(effectiveUserId);
+  return tasks.map((task) => normalizeTask(task, task.id));
 }
 
 export async function getTask(id) {
-  // return (await api.get(`/tasks/${id}`)).data;
-  return mockDelay(mockTasks.find((t) => t.id === id));
+  const tasks = await getTasks();
+  return tasks.find((task) => task.id === id);
 }
 
-export async function createTask(task) {
-  // return (await api.post('/tasks', task)).data;
-  const newTask = { ...task, id: `tsk_${Date.now()}` };
-  mockTasks = [newTask, ...mockTasks];
-  return mockDelay(newTask);
+export async function createTask(task, userId = null) {
+  const currentUser = await getCurrentUser();
+  const created = await addTaskDoc(task, userId || currentUser?.uid || null);
+  return normalizeTask(created, created.id);
 }
 
 export async function updateTask(id, updates) {
-  // return (await api.patch(`/tasks/${id}`, updates)).data;
-  mockTasks = mockTasks.map((t) => (t.id === id ? { ...t, ...updates } : t));
-  return mockDelay(mockTasks.find((t) => t.id === id));
+  const updated = await updateTaskDoc(id, updates);
+  return normalizeTask({ id, ...updates, ...updated }, id);
 }
 
 export async function deleteTask(id) {
-  // return (await api.delete(`/tasks/${id}`)).data;
-  mockTasks = mockTasks.filter((t) => t.id !== id);
-  return mockDelay(true);
+  await deleteTaskDoc(id);
 }
 
-export async function getTaskStats() {
-  // return (await api.get('/tasks/stats')).data;
-  return mockDelay({ meeting: 12, learning: 40, event: 7, general: 12 });
+export async function getTaskStats(userId = null) {
+  const tasks = await getTasks(userId);
+  return {
+    meeting: tasks.filter((task) => task.categories.includes('meeting')).length,
+    learning: tasks.filter((task) => task.categories.includes('learning')).length,
+    event: tasks.filter((task) => task.categories.includes('event')).length,
+    general: tasks.filter((task) => task.categories.includes('general')).length,
+  };
+}
+
+export async function addCategory(category) {
+  return addCategoryDoc(category);
+}
+
+export async function getCategories() {
+  return getCategoriesDoc();
 }

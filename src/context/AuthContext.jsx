@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import * as authService from '@/services/authService';
 
-const AuthContext = createContext(undefined);
+export const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -9,13 +9,22 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // On mount, try to restore session (e.g. from a stored token).
-    // Swapped for a real /me call once the FastAPI backend exists.
+    let active = true;
     authService
       .getCurrentUser()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+      .then((currentUser) => {
+        if (active) setUser(currentUser);
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = useCallback(async (credentials) => {
@@ -25,9 +34,27 @@ export function AuthProvider({ children }) {
       setUser(loggedInUser);
       return loggedInUser;
     } catch (err) {
-      setError(err.message || 'Failed to log in');
-      throw err;
+      const message = err.message || 'Failed to log in';
+      setError(message);
+      throw new Error(message);
     }
+  }, []);
+
+  const register = useCallback(async (values) => {
+    setError(null);
+    try {
+      const createdUser = await authService.register(values);
+      setUser(createdUser);
+      return createdUser;
+    } catch (err) {
+      const message = err.message || 'Failed to create an account';
+      setError(message);
+      throw new Error(message);
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email) => {
+    await authService.resetPassword(email);
   }, []);
 
   const logout = useCallback(async () => {
@@ -41,6 +68,8 @@ export function AuthProvider({ children }) {
     isLoading,
     error,
     login,
+    register,
+    resetPassword,
     logout,
   };
 

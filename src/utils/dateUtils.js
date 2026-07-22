@@ -1,4 +1,5 @@
 import { MONTHS } from '@/constants/categories';
+import { formatDateLabel } from '@/utils/date';
 
 /** Returns number of days in a given month (0-indexed month, matching Date). */
 export function daysInMonth(year, month) {
@@ -30,3 +31,5 @@ export function formatEventDate(date) {
 export function formatTimeRange(from, to) {
   return `${from} \u2013 ${to}`;
 }
+
+export { formatDateLabel };

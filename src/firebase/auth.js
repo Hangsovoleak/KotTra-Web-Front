@@ -1,10 +1,10 @@
 import {
   createUserWithEmailAndPassword,
-  onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile as updateFirebaseProfile,
+  updateProfile,
+  onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 
@@ -19,16 +19,14 @@ function mapUser(user) {
 }
 
 export async function login({ email, password }) {
-  if (!email || !password) throw new Error('Email and password are required');
   const credential = await signInWithEmailAndPassword(auth, email, password);
   return mapUser(credential.user);
 }
 
 export async function register({ email, password, displayName }) {
-  if (!email || !password) throw new Error('Email and password are required');
   const credential = await createUserWithEmailAndPassword(auth, email, password);
   if (displayName) {
-    await updateFirebaseProfile(credential.user, { displayName });
+    await updateProfile(credential.user, { displayName });
   }
   return mapUser(credential.user);
 }
@@ -37,7 +35,11 @@ export async function logout() {
   await signOut(auth);
 }
 
-export async function getCurrentUser() {
+export async function resetPassword(email) {
+  await sendPasswordResetEmail(auth, email);
+}
+
+export function getCurrentUser() {
   return new Promise((resolve) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
@@ -45,17 +47,3 @@ export async function getCurrentUser() {
     });
   });
 }
-
-export async function resetPassword(email) {
-  if (!email) throw new Error('Email is required');
-  await sendPasswordResetEmail(auth, email);
-}
-
-export async function updateUserProfile(updates) {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return null;
-  await updateFirebaseProfile(currentUser, updates);
-  return mapUser(currentUser);
-}
-
-export const updateProfile = updateUserProfile;

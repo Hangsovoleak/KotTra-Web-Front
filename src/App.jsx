@@ -3,6 +3,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { UserProvider } from '@/context/UserContext';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { TaskProvider } from '@/context/TaskContext';
 import AppRoutes from '@/routes/AppRoutes';
 
 export default function App() {
@@ -12,7 +13,9 @@ export default function App() {
         <AuthProvider>
           <UserProvider>
             <NotificationProvider>
-              <AppRoutes />
+              <TaskProvider>
+                <AppRoutes />
+              </TaskProvider>
             </NotificationProvider>
           </UserProvider>
         </AuthProvider>
