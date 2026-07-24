@@ -20,6 +20,7 @@ function normalizeTask(task, fallbackId) {
     date: task?.date || new Date().toISOString().slice(0, 10),
     completed: Boolean(task?.completed),
     userId: task?.userId || null,
+    createdAt: task?.createdAt || null,
   };
 }
 

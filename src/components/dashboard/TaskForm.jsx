@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Plus, X } from 'lucide-react';
+import ActionButtonsRow from '@/components/dashboard/ActionButtonsRow';
 import CategoryMultiSelect from '@/components/dashboard/CategoryMultiSelect';
 import MiniCalendar from '@/components/dashboard/MiniCalendar';
 import { useNotifications } from '@/context/NotificationContext';
@@ -26,10 +26,12 @@ export default function TaskForm({
   onCreate,
   initialValues,
   onCancel,
+  onDelete,
   submitLabel = 'Create task',
   successMessage = 'Task created',
 }) {
   const { notify } = useNotifications();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     register,
     handleSubmit,
@@ -65,25 +67,45 @@ export default function TaskForm({
   }, [initialValues, reset]);
 
   const onSubmit = async (data) => {
-    const payload = normalizePayload(data);
-    await onCreate?.(payload);
-    notify(successMessage, 'success');
-    if (!initialValues?.id) {
-      reset({
-        title: '',
-        description: '',
-        categories: [],
-        from: '',
-        to: '',
-        period: 'AM',
-        date: todayInputValue(),
-      });
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const payload = normalizePayload(data);
+      await onCreate?.(payload);
+      notify(successMessage, 'success');
+
+      if (!initialValues?.id) {
+        reset({
+          title: '',
+          description: '',
+          categories: [],
+          from: '',
+          to: '',
+          period: 'AM',
+          date: todayInputValue(),
+        });
+      }
+    } catch (error) {
+      notify(error?.message || 'Unable to save task', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
       <form onSubmit={handleSubmit(onSubmit)}>
+        <ActionButtonsRow
+          isEditing={Boolean(initialValues?.id)}
+          isSubmitting={isSubmitting}
+          onAdd={isSubmitting ? undefined : handleSubmit(onSubmit)}
+          onUpdate={isSubmitting ? undefined : handleSubmit(onSubmit)}
+          onDelete={isSubmitting ? undefined : () => onDelete?.(initialValues?.id)}
+          onCancel={isSubmitting ? undefined : onCancel}
+        />
+
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-gray-400">
@@ -92,24 +114,6 @@ export default function TaskForm({
             <h3 className="text-xl font-bold text-gray-800">
               {initialValues?.id ? 'Edit a task' : 'Create a new task'}
             </h3>
-          </div>
-          <div className="flex items-center gap-2">
-            {initialValues?.id ? (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-600"
-              >
-                <X size={14} /> Cancel
-              </button>
-            ) : null}
-            <button
-              type="submit"
-              aria-label={submitLabel}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-learning-bold text-learning-bold"
-            >
-              <Plus size={16} strokeWidth={2.5} />
-            </button>
           </div>
         </div>
 
@@ -159,13 +163,6 @@ export default function TaskForm({
                   type="time"
                   className="w-32 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-meeting/40"
                 />
-                <select
-                  {...register('period')}
-                  className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-meeting/40"
-                >
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
               </div>
               <div className="flex items-center gap-3">
                 <span className="w-12 text-sm font-semibold text-gray-600">To:</span>
@@ -174,9 +171,6 @@ export default function TaskForm({
                   type="time"
                   className="w-32 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-meeting/40"
                 />
-                <span className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-500">
-                  {watch('period') || 'AM'}
-                </span>
               </div>
             </div>
           </div>
@@ -185,6 +179,7 @@ export default function TaskForm({
             <MiniCalendar value={selectedDate} onChange={(value) => setValue('date', value, { shouldDirty: true })} />
           </div>
         </div>
+
       </form>
     </div>
   );

@@ -1,21 +1,14 @@
 import { useState } from 'react';
 import StatsRow from '@/components/dashboard/StatsRow';
-import ActionButtonsRow from '@/components/dashboard/ActionButtonsRow';
 import TaskForm from '@/components/dashboard/TaskForm';
 import ActivityList from '@/components/dashboard/ActivityList';
 import { useTasks } from '@/hooks/useTasks';
 import { useNotifications } from '@/context/NotificationContext';
 
 export default function Dashboard() {
-  const { tasks, isLoading, addTask, updateTask, refresh, removeTask } = useTasks();
+  const { tasks, isLoading, addTask, updateTask, removeTask } = useTasks();
   const { notify } = useNotifications();
   const [editingTask, setEditingTask] = useState(null);
-
-  async function handleClearAll() {
-    await Promise.all(tasks.map((task) => removeTask(task.id)));
-    setEditingTask(null);
-    notify('All tasks cleared', 'info');
-  }
 
   async function handleCreate(task) {
     await addTask(task);
@@ -36,17 +29,29 @@ export default function Dashboard() {
     notify('Task deleted', 'success');
   }
 
+  async function handleToggleComplete(task) {
+    try {
+      const nextCompletedState = !task.completed;
+      await updateTask(task.id, { completed: nextCompletedState });
+      notify(
+        nextCompletedState ? 'Task marked as completed' : 'Task marked as incomplete',
+        'success'
+      );
+    } catch (error) {
+      notify(error?.message || 'Failed to update task status', 'error');
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <StatsRow />
-
-      <ActionButtonsRow onAdd={() => setEditingTask(null)} onRefresh={refresh} onClear={handleClearAll} />
 
       <TaskForm
         key={editingTask?.id || 'new-task'}
         initialValues={editingTask}
         onCreate={editingTask?.id ? handleUpdate : handleCreate}
         onCancel={() => setEditingTask(null)}
+        onDelete={handleDelete}
         submitLabel={editingTask?.id ? 'Save task' : 'Create task'}
         successMessage={editingTask?.id ? 'Task updated' : 'Task created'}
       />
@@ -57,7 +62,9 @@ export default function Dashboard() {
         onView={setEditingTask}
         onEdit={setEditingTask}
         onDelete={handleDelete}
+        onToggleComplete={handleToggleComplete}
       />
     </div>
   );
 }
+
