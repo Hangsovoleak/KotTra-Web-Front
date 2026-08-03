@@ -18,8 +18,9 @@ export default function ActionButtonsRow({
             color="var(--color-event-bold)"
             bg="var(--color-event-light)"
             onClick={onCancel}
-            label="Cancel"
+            label="Clear"
             disabled={isSubmitting}
+            showLabel
           />
           <IconCircleButton
             icon={RotateCcw}
@@ -28,6 +29,7 @@ export default function ActionButtonsRow({
             onClick={onUpdate}
             label="Update"
             disabled={isSubmitting}
+            showLabel
           />
           <IconCircleButton
             icon={Trash2}
@@ -36,6 +38,7 @@ export default function ActionButtonsRow({
             onClick={onDelete}
             label="Delete"
             disabled={isSubmitting}
+            showLabel
           />
         </>
       ) : (
@@ -46,6 +49,7 @@ export default function ActionButtonsRow({
           onClick={onAdd}
           label="Add"
           disabled={isSubmitting}
+          showLabel
         />
       )}
     </div>

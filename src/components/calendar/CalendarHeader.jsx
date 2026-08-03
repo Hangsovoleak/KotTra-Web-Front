@@ -50,13 +50,11 @@ export default function CalendarHeader({
         </div>
       </div>
 
-      {/* Center: Title */}
       <h2 className="text-xl font-black text-gray-800 tracking-tight flex items-center gap-2">
         <span className="opacity-45">Calendar on</span>
         <span className="bg-white/40 px-2.5 py-0.5 rounded-lg">{displayTitle}</span>
       </h2>
 
-      {/* Right: View Selector */}
       <div className="flex items-center rounded-lg border border-gray-300/50 bg-white/70 p-0.5 shadow-sm">
         <button
           type="button"
