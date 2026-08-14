@@ -5,8 +5,41 @@ import {
   signOut,
   updateProfile,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  confirmPasswordReset,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
 import { auth } from '@/firebase/config';
+
+export function getAuthErrorMessage(error) {
+  if (!error) return 'An unexpected error occurred.';
+  const code = error.code || '';
+  switch (code) {
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Invalid email address or password.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email address already exists.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters long.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/too-many-requests':
+      return 'Too many unsuccessful attempts. Please try again later.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your internet connection.';
+    case 'auth/expired-action-code':
+      return 'The password reset link has expired. Please request a new one.';
+    case 'auth/invalid-action-code':
+      return 'The password reset link is invalid or has already been used.';
+    case 'auth/popup-closed-by-user':
+      return 'Sign-in popup was closed before completing the sign-in.';
+    default:
+      return error.message || 'Authentication failed. Please try again.';
+  }
+}
 
 function mapUser(user) {
   if (!user) return null;
@@ -19,16 +52,34 @@ function mapUser(user) {
 }
 
 export async function login({ email, password }) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  return mapUser(credential.user);
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    return mapUser(credential.user);
+  } catch (error) {
+    throw new Error(getAuthErrorMessage(error));
+  }
 }
 
 export async function register({ email, password, displayName }) {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  if (displayName) {
-    await updateProfile(credential.user, { displayName });
+  try {
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    if (displayName) {
+      await updateProfile(credential.user, { displayName });
+    }
+    return mapUser(credential.user);
+  } catch (error) {
+    throw new Error(getAuthErrorMessage(error));
   }
-  return mapUser(credential.user);
+}
+
+export async function loginWithGoogle() {
+  try {
+    const provider = new GoogleAuthProvider();
+    const credential = await signInWithPopup(auth, provider);
+    return mapUser(credential.user);
+  } catch (error) {
+    throw new Error(getAuthErrorMessage(error));
+  }
 }
 
 export async function logout() {
@@ -36,7 +87,27 @@ export async function logout() {
 }
 
 export async function resetPassword(email) {
-  await sendPasswordResetEmail(auth, email);
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    throw new Error(getAuthErrorMessage(error));
+  }
+}
+
+export async function confirmPasswordResetCode(oobCode, newPassword) {
+  try {
+    await confirmPasswordReset(auth, oobCode, newPassword);
+  } catch (error) {
+    throw new Error(getAuthErrorMessage(error));
+  }
+}
+
+export async function verifyResetCode(oobCode) {
+  try {
+    return await verifyPasswordResetCode(auth, oobCode);
+  } catch (error) {
+    throw new Error(getAuthErrorMessage(error));
+  }
 }
 
 export function getCurrentUser() {
@@ -47,3 +118,4 @@ export function getCurrentUser() {
     });
   });
 }
+

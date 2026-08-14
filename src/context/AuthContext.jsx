@@ -27,6 +27,10 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   const login = useCallback(async (credentials) => {
     setError(null);
     try {
@@ -53,8 +57,39 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    setError(null);
+    try {
+      const loggedInUser = await authService.loginWithGoogle();
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (err) {
+      const message = err.message || 'Failed to sign in with Google';
+      setError(message);
+      throw new Error(message);
+    }
+  }, []);
+
   const resetPassword = useCallback(async (email) => {
-    await authService.resetPassword(email);
+    setError(null);
+    try {
+      await authService.resetPassword(email);
+    } catch (err) {
+      const message = err.message || 'Failed to send password reset email';
+      setError(message);
+      throw new Error(message);
+    }
+  }, []);
+
+  const confirmPasswordReset = useCallback(async (oobCode, newPassword) => {
+    setError(null);
+    try {
+      await authService.confirmPasswordResetCode(oobCode, newPassword);
+    } catch (err) {
+      const message = err.message || 'Failed to reset password';
+      setError(message);
+      throw new Error(message);
+    }
   }, []);
 
   const logout = useCallback(async () => {
@@ -67,9 +102,12 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(user),
     isLoading,
     error,
+    clearError,
     login,
     register,
+    loginWithGoogle,
     resetPassword,
+    confirmPasswordReset,
     logout,
   };
 
@@ -81,3 +119,4 @@ export function useAuth() {
   if (ctx === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return ctx;
 }
+

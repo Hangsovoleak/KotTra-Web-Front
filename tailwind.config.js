@@ -4,11 +4,11 @@ module.exports = {
   theme: {
     extend: {},
     screens: {
-      'mobile': {'max': '639px'},       // <640px
-      'smTablet': {'min': '640px', 'max': '767px'}, // 640‑767
-      'tablet': {'min': '768px', 'max': '1023px'},   // 768‑1023
-      'desktop': {'min': '1024px', 'max': '1279px'}, // 1024‑1279
-      'lgDesktop': {'min': '1280px'},   // >=1280
+      'mobile': {'max': '639px'},      
+      'smTablet': {'min': '640px', 'max': '767px'},
+      'tablet': {'min': '768px', 'max': '1023px'},   
+      'desktop': {'min': '1024px', 'max': '1279px'}, 
+      'lgDesktop': {'min': '1280px'},  
     },
   },
   plugins: [],

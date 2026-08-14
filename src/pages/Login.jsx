@@ -1,106 +1,147 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Mail, AlertCircle, ArrowRight } from 'lucide-react';
+import AuthLayout from '@/layouts/AuthLayout';
+import PasswordInput from '@/components/auth/PasswordInput';
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '', displayName: '' });
+  const location = useLocation();
+  const { login, clearError } = useAuth();
+
+  const [form, setForm] = useState({
+    email: localStorage.getItem('kottra_remember_email') || '',
+    password: '',
+    rememberMe: Boolean(localStorage.getItem('kottra_remember_email')),
+  });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successNotice, setSuccessNotice] = useState('');
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  useEffect(() => {
+    clearError();
+    if (location.state?.message) {
+      setSuccessNotice(location.state.message);
+    }
+  }, [location.state, clearError]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
     setError('');
+    setSuccessNotice('');
     setIsSubmitting(true);
+
     try {
-      if (isSignUp) {
-        await register({
-          email: form.email,
-          password: form.password,
-          displayName: form.displayName,
-        });
+      if (form.rememberMe) {
+        localStorage.setItem('kottra_remember_email', form.email);
       } else {
-        await login({
-          email: form.email,
-          password: form.password,
-        });
+        localStorage.removeItem('kottra_remember_email');
       }
+
+      await login({ email: form.email, password: form.password });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || `Unable to ${isSignUp ? 'sign up' : 'sign in'}`);
+      setError(err.message || 'Failed to sign in. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-app-bg px-4">
-      <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {isSignUp ? 'Create your account' : 'Welcome back'}
-        </h1>
-        <p className="mt-2 text-sm text-gray-500">
-          {isSignUp
-            ? 'Sign up to start planning your tasks and calendar.'
-            : 'Sign in to manage your tasks and calendar.'}
-        </p>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to your account to manage tasks and goals."
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {successNotice && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 font-medium">
+            <span>{successNotice}</span>
+          </div>
+        )}
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          {isSignUp && (
+        {error && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-600 font-medium">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="email" className="block text-xs font-semibold text-gray-700 mb-1.5">
+            Email address
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <Mail className="w-4 h-4" />
+            </div>
             <input
-              type="text"
-              value={form.displayName}
-              onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-learning-bold/30"
-              placeholder="Full Name"
-              required={isSignUp}
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={form.email}
+              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50/80 pl-10 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-learning-bold focus:ring-2 focus:ring-learning-bold/20"
             />
-          )}
-          <input
-            type="email"
-            value={form.email}
-            onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-learning-bold/30"
-            placeholder="Email"
-            required
-          />
-          <input
-            type="password"
-            value={form.password}
-            onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-learning-bold/30"
-            placeholder="Password"
-            required
-          />
-          {error ? <p className="text-sm font-semibold text-red-500">{error}</p> : null}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-full bg-learning-bold px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
-          >
-            {isSubmitting ? 'Please wait...' : isSignUp ? 'Sign up' : 'Sign in'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm">
-          <span className="text-gray-500">
-            {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError('');
-            }}
-            className="font-semibold text-learning-bold hover:underline"
-          >
-            {isSignUp ? 'Sign in' : 'Sign up'}
-          </button>
+          </div>
         </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="password" className="block text-xs font-semibold text-gray-700">
+              Password
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-xs text-learning-bold hover:underline font-medium"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            value={form.password}
+            onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="Enter your password"
+          />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            id="rememberMe"
+            name="rememberMe"
+            type="checkbox"
+            checked={form.rememberMe}
+            onChange={(e) => setForm((prev) => ({ ...prev, rememberMe: e.target.checked }))}
+            className="h-4 w-4 rounded border-gray-300 text-learning-bold focus:ring-learning-bold/20 cursor-pointer"
+          />
+          <label htmlFor="rememberMe" className="ml-2 text-xs text-gray-600 select-none cursor-pointer">
+            Remember my email
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full flex items-center justify-center gap-2 rounded-full bg-learning-bold py-2.5 px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+        >
+          <span>{isSubmitting ? 'Signing in...' : 'Sign in'}</span>
+          {!isSubmitting && <ArrowRight className="w-4 h-4" />}
+        </button>
+      </form>
+
+      <SocialLoginButtons onError={(msg) => setError(msg)} />
+
+      <div className="mt-6 text-center text-xs text-gray-500">
+        Don&apos;t have an account?{' '}
+        <Link to="/register" className="font-semibold text-learning-bold hover:underline">
+          Sign up
+        </Link>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
-
